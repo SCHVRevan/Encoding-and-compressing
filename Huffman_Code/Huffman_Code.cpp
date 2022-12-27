@@ -1,8 +1,9 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
-#include <map>
+#include <unordered_map>
 #include <string>
+using namespace std;
 
 // узел дерева
 class Node() {
@@ -22,6 +23,24 @@ Node *allocNode(char ch, int freq, Node *left, Node *right) {
 	node->right = right;
 	return node;
 }
+
+// Тип compare, обеспечивающий строгий слабый порядок (необходим для использования prority_queue)
+class compare {
+public:
+	bool operator()(Node* left, Node* right) {
+		// Переопределяем предикат сравнения (для сравнения частоты)
+		return left->freq > right->freq;
+	}
+};
+
+// map для сохранения частоты символов
+unordered_map <char, int> freq;
+
+// Очередь с приоритетами
+priority_queue <Node*, vector<Node*>, compare> pr_q;
+
+// map для сохранения кодов символов (неупорядоченный в связи с его потенциальным выигрышем во времени записи/удаления)
+unordered_map <char, string> alphabet;
 
 // кодируем
 void encode() {
