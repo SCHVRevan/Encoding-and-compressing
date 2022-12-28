@@ -34,7 +34,7 @@ public:
 };
 
 // Кодируем, проходясь по сформированному дереву
-void encode(Node* root, string str, unordered_map <char, string> alphabet) {
+void encode(Node* root, string str, unordered_map <char, string> &alphabet) {
  	if (root == nullptr) {return;}	// Проверяем, существует ли вершина
 	
 	// Если нашли узел без последователей, записываем символ в алфавит (подготовленный map)
@@ -46,10 +46,16 @@ void encode(Node* root, string str, unordered_map <char, string> alphabet) {
 	encode(root->right, str + "1", alphabet);
 }
 
-// Декодируем
-void decode(Node* root, string str, unordered_map <char, string> alphabet) {
+// Декодируем, проходясь по дереву, и записываем декодированные символы в файл out_text
+// Для этого передаём поток вывода в качестве формального параметра
+void decode(Node* root, string str, unordered_map <char, string> &alphabet, ostream &file_out) {
  	if (root == nullptr) {return;}	// Проверяем, существует ли вершина
-	
+	// Если нашли узел без последователей, записываем соотв. символ в файл
+	if (!root->left && !root->right) {
+		file_out << root->ch;
+		return;
+	}
+		// Выход за пределы???
 }
 
 // Дерево Хаффмана
@@ -57,7 +63,7 @@ void HuffmanTree(string text) {
 	// map для сохранения частоты символов
 	unordered_map <char, int> freq;
 
-	// Подсчитываем частоту символов (цикл ranged-based for)
+	// Подсчитываем частоту символов (циклом ranged-based for)
 	for (char ch: text) {
 		freq[ch]++;
 	}
@@ -91,13 +97,27 @@ void HuffmanTree(string text) {
 	
 	// map для сохранения кодов символов (неупорядоченный в связи с его потенциальным выигрышем во времени записи/удаления)
 	unordered_map <char, string> alphabet;
+	
+	// Выполняем кодирование текста
+	encode(root, "", alphabet);
+	
+	ofstream file_codes("Alphabet.txt");	// Открываем файл для записи
+	// Сохраним вид нашего алфавита в файл Alphabet (для визуализации) (циклом ranged-based for)
+	for (auto pair: alphabet) {
+		file_codes << pair.first << " " << pair.second << '\n';	// Обращаемся к первому и второму полю alphabet соответственно
+	}
+	file_codes.close();	// Закрываем файл
+	
+	
+	ofstream file_out("out_text.txt");	// Открываем файл для записи
+	// Выполняем расшифровку текста
+	decode(root, str, file_out);
+	file_out.close();	// Закрываем файл
 }
 
 int main() {
-	// Открываем файл для чтения
-	ifstream file_in("in_text.txt");
-	// Открываем файлы для записи
-	ofstream file_out("out_text.txt"), file_coded("encoded_text.txt"), file_codes("Alphabet.txt");
+	ifstream file_in("in_text.txt");	// Открываем файл для чтения
+	ofstream file_coded("encoded_text.txt"), file_codes("Alphabet.txt");	// Открываем файлы для записи
 	string text, tmp;
 	// Пока не достигли конца файла, построчно считываем данные
 	while (!file_in.eof()) {
@@ -105,7 +125,7 @@ int main() {
 		text += tmp + '\n';	// Не включая их, дополняем текст этим элементов
 	};
 	text.pop_back();	// Исключаем лишний символ конца строки (\n)
-  	file_in.close(), file_out.close(), file_coded.close(), file_codes.close();	// Закрываем файлы
+  	file_in.close(), file_coded.close();	// Закрываем файлы
 	
   return 0;
 }
