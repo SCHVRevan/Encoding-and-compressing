@@ -36,8 +36,19 @@ public:
 // map для сохранения частоты символов
 unordered_map <char, int> freq;
 
+// Подсчитываем частоту символов (цикл ranged-based for)
+for (char ch: text) {
+	freq[ch]++;
+}
+
 // Очередь с приоритетами
 priority_queue <Node*, vector<Node*>, compare> pr_q;
+
+// Создадим узлы бинарного дерева для каждого знака и добавим их в очередь, используя частоту в качестве приоритета
+for (auto pair: freq) {
+	// Добавляем элемент в очередь с приоритетами на основе приоритета элемента из comp
+	pr_q.push(allocNode(pair.first, pair.second));
+}
 
 // map для сохранения кодов символов (неупорядоченный в связи с его потенциальным выигрышем во времени записи/удаления)
 unordered_map <char, string> alphabet;
