@@ -33,14 +33,25 @@ public:
 	}
 };
 
-// кодируем
-void encode() {
- 	
+// Кодируем, проходясь по сформированному дереву
+void encode(Node* root, string str, unordered_map <char, string> alphabet) {
+ 	if (root == nullptr) {return;}	// Проверяем, существует ли вершина
+	
+	// Если нашли узел без последователей, записываем символ в алфавит (подготовленный map)
+	if (!root->left && !root->right) {
+		alphabet[root->ch] = str;
+	}
+	// Рекурсивно проходим по ветвям дерева (начиная с левых), дописывая в формируемый код символа соотв. значения
+	encode(root->left, str + "0", alphabet);
+	encode(root->right, str + "1", alphabet);
 }
-// декодируем
-void decode() {
- 	
+
+// Декодируем
+void decode(Node* root, string str, unordered_map <char, string> alphabet) {
+ 	if (root == nullptr) {return;}	// Проверяем, существует ли вершина
+	
 }
+
 // Дерево Хаффмана
 void HuffmanTree(string text) {
 	// map для сохранения частоты символов
@@ -63,8 +74,10 @@ void HuffmanTree(string text) {
 	// Связывание узлов
 	while (pr_q.size() > 1)	{
 		// Удаляем из очереди два узла с наивысшим приоритетом (самой низкой частотой) (сохраняя указатели на удаляемые узлы)
-		Node *left = pr_q.top(); pr_q.pop();
-		Node *right = pr_q.top(); pr_q.pop();
+		Node *left = pr_q.top();
+		pr_q.pop();
+		Node *right = pr_q.top();
+		pr_q.pop();
 		
 		// Создаваём новый узел дерева, в котором они оба будут потомками
 		// Приоритет нового узла будет равен сумме их приоритетов
