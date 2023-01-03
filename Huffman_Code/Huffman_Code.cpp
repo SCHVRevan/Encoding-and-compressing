@@ -64,7 +64,7 @@ void decode(string text, unordered_map <string, char> &alphabet) {
 
 // Дерево Хаффмана
 void HuffmanTree(string text) {
-	ofstream file_codes("Alphabet.txt"), file_coded("encoded_text.txt"), file_out("out_text.txt");	// Открываем файлы для записи
+	ofstream file_codes("Alphabet.txt"), file_coded("encoded_text.txt");	// Открываем файлы для записи
 	// map для сохранения частоты символов
 	unordered_map <char, int> freq;
 
@@ -106,26 +106,19 @@ void HuffmanTree(string text) {
 	// Выполняем кодирование текста
 	encode(root, "", alphabet);
 	
-	// выводим закодированный текст
+	// Выводим закодированный текст
 	string str = "";
 	for (char ch: text) {
 		str += alphabet[ch];
 	}
 	file_coded << str;
+	cout << "\nFile was succesfully encoded.\n";
 
 	// Сохраним вид нашего алфавита в файл Alphabet (для визуализации) (циклом ranged-based for)
 	for (auto pair: alphabet) {
 		file_codes << pair.first << " " << pair.second << '\n';	// Обращаемся к первому и второму полю alphabet соответственно
-	}
-	
-	// Вводим индекс для поэлементной работы со строкой закодированных символов
-	int index = -1;
-	// Выполняем декодирование текста
-	while (index < (int)str.size() - 2) {
-		decode(root, index, str, file_out);
-	}
-	
-	file_codes.close(), file_coded.close(), file_out.close();	// Закрываем файлы
+	}	
+	file_codes.close(), file_coded.close();	// Закрываем файлы
 }
 
 int main() {
