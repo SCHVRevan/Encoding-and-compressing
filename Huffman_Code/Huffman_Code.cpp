@@ -5,7 +5,7 @@
 #include <string>
 using namespace std;
 
-// узел дерева
+// Узел дерева
 class Node {
 public:
 	char ch;	// Символ текста
@@ -45,26 +45,21 @@ void encode(Node* root, string str, unordered_map <char, string> &alphabet) {
 	encode(root->left, str + "0", alphabet);
 	encode(root->right, str + "1", alphabet);
 }
-
-// Декодируем, проходясь по дереву, и записываем декодированные символы в файл out_text
-// Для этого передаём поток вывода в качестве формального параметра
-void decode(Node* root, int &index, string str, ostream &file_out) {
- 	if (root == nullptr) {return;}	// Проверяем, существует ли вершина
-	// Если нашли узел без последователей, записываем соотв. символ в файл
-	if (!root->left && !root->right) {
-		file_out << root->ch;
-		return;
+// Декодируем
+void decode(string text, unordered_map <string, char> &alphabet) {
+	ofstream file_out("out_text.txt");	// Открываем файл для записи
+	string tmp = "";
+	// Посимвольно считываем данные из закодированного текста
+	for (char ch: text) {
+		tmp += ch;
+		// Проверяем, существует ли в алфавите элемент с таким ключом
+		if (alphabet.find(tmp) != alphabet.end()) {
+			file_out << alphabet[tmp];
+			tmp = "";
+		}
 	}
-	
-	index++;
-	// Рекурсивно проходим по ветвям дерева (в зависимости от рассматриваемого символа)
-	if (str[index] == '0') {
-		decode(root->left, index, str, file_out);
-	}
-	else {
-		decode(root->right, index, str, file_out);
-	}
-	
+	// Данная реализация декодирования возможна благодаря тому, что любой код не является префиксом для кода другого символа
+	file_out.close();
 }
 
 // Дерево Хаффмана
@@ -134,16 +129,75 @@ void HuffmanTree(string text) {
 }
 
 int main() {
-	ifstream file_in("in_text.txt");	// Открываем файл для чтения
-	string text, tmp;
+	string text, tmp, path, act;
+	// Запрашиваем путь к файлу (сам файл, если он находится в одной директории с исполняемой программой)
+	cout << "Please, enter the path to the file: ";
+	cin >> path;
+	ifstream file_in(path);	// Открываем файл для чтения
+	// Проверяем, существует ли файл/открыт ли к нему доступ
+	if(!file_in) {
+		cout << "\nThe file does not exist or access to it is denied. Please, try again.\n";
+		return 0;
+	}
+	// Запрашиваем действие, которое необходимо выполнить
+	cout << "\nYou will not be able to decode the file without its primary encoding!\n\nEnter 1 if you want to encode file, enter 2 in other way: ";
+	cin >> act;
+	// Проверяем, корректно ли введён индекс действия
+	if (act != "1" && act != "2") {
+		cout << "\nAn incorrect value was entered. Please, try again.\n";
+		return 0;
+	}
 	// Пока не достигли конца файла, построчно считываем данные
 	while (!file_in.eof()) {
 		getline(file_in, tmp);	// Т.к. функция getline() считывает до символа конца строки,
-		text += tmp + '\n';	// Не включая их, дополняем текст этим элементов
+		text += tmp + '\n';	// Не включая их, дополняем текст этим элементом
 	};
+	file_in.close();	// Закрываем файл
 	text.pop_back();	// Исключаем лишний символ конца строки (\n)
-	HuffmanTree(text);
-  	file_in.close();	// Закрываем файл
-	
+	// Выполняем кодирование (если поступил соотв. запрос)
+	if (act == "1") {
+		HuffmanTree(text);
+	}
+	// Выполняем декодирование
+	else if (act == "2") {
+		ifstream file_codes("Alphabet.txt");
+		// map для сохранения символов (коды символов передаём в качетсве ключа)
+		unordered_map <string, char> alphabet;
+
+		char ch = ' ';
+		string code, buffer;
+		// Заполняем map данными из файла-алфавита
+		while (!file_codes.eof()) {
+			code = "";
+			getline(file_codes, buffer);
+			bool flag = true;
+			for (auto i: buffer) {
+				if (flag) {
+					ch = i;
+					flag = false;
+				}
+				else if (!flag && i != ' ') {
+					code += i;
+				}
+			}
+			// Обработка символа новой строки (\n)
+			if (code == "") {
+				ch = '\n';
+				getline(file_codes, buffer);
+				for (auto i: buffer) {
+					if (i != ' ') {
+						code += i;
+					}
+				}
+			}
+			if (code != "") {
+				alphabet[code] = ch;
+			}
+		}
+		file_codes.close();	// Закрываем файл-алфавит
+		// Выполняем декодирование текста
+		decode(text, alphabet);
+		cout << "\nFile was succesfully decoded.\n";
+	}
   return 0;
 }
