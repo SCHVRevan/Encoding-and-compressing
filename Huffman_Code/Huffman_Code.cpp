@@ -114,7 +114,7 @@ void HuffmanTree(string text) {
 	file_coded << str;
 	cout << "\nFile was succesfully encoded.\n";
 
-	// Сохраним вид нашего алфавита в файл Alphabet (для визуализации) (циклом ranged-based for)
+	// Сохраним вид нашего алфавита в файл Alphabet (циклом ranged-based for)
 	for (auto pair: alphabet) {
 		file_codes << pair.first << " " << pair.second << '\n';	// Обращаемся к первому и второму полю alphabet соответственно
 	}	
