@@ -18,36 +18,75 @@ struct comp {
         return l.first > r.first;
     }
 };
+// Функция переноса найденных битов в файл
+void BitsPlusFollow(int bit, int bits_to_follow, ofstream& file_coded) {
+	file_coded << bit;
+	for (; bits_to_follow > 0; bits_to_follow--) {
+		if (bit == 0) {
+			file_coded << 1;
+		}
+		else {
+			file_coded << 0;
+		}
+	}
+}
 
 // Кодируем
-double compressor(int in_len, string text, set<pair<char, double>, comp> set) {
-	// Формируем map с полями под границы интервалов (в качестве ключей - символы) 
-	unordered_map <char, array<int, 2>> segment;
-	array<int, 2> interval;
-	int l = 0;
-	cout << "\n\tChecking ranges\n";
+void compressor(string text, set<pair<char, int>, comp> set) {
+	ofstream file_coded("encoded_text.txt");
+	unordered_map <char, int> ch;	// Первый и второй столбцы таблицы
+	unordered_map <int, int> freq_;	// Первый и третий столбцы таблицы
+	unordered_map <int, int> b;	// Первый и четвёртый столбцы таблицы
+	unordered_map <int, array<int, 2>> boarders;
+
+	ch[0] = NULL;
+	freq_[0] = NULL;
+	b[0] = 0;
+	
+	int l = 0, j = 1;
 	for (auto pair: set) {
-		interval = {l, l + pair.second};
-		cout << interval.at(0) << ' ' << interval.at(1) << "\n";
-    		segment[pair.first].at(0) = interval.at(0);
-		segment[pair.first].at(1) = interval.at(1);
-    		l = l + pair.second;
+    		ch[pair.first] = j;
+		freq_[j] = pair.second;
+		b[j++] = l + pair.second;
+    		l += pair.second;
 	}
-	// Реализуем дальнейшие шаги алгоритма
-	char ch;
-   	int  newRight, newLeft, left = 0, right = 1;
-	cout << "\n\tCheck boarders:\n";
-    	for (int i = 0; i < in_len; i++) {
-		ch = text[i];
-		cout << "old left: " << left << " old right: " << right << "\n";
-        	newLeft = left + segment[ch].at(0) * (right - left);
-		cout << "new left: " << newLeft;
-		newRight = left + segment[ch].at(1) * (right - left);
-		cout << " new right: " << newRight << "\n\n";
-        	right = newRight;
-		left = newLeft;
+    	int left = 0, right = 65535, i = 0, delitel = b[j-1];
+	boarders[0].at(0) = left;
+	boarders[0].at(1) = right;
+	int First_qtr = (right + 1) / 4;	// 16384
+	int Half = First_qtr * 2;	// 32768
+	int Third_qtr = First_qtr * 3;	// 49152
+	int bits_to_follow = 0;	// Сколько битов сбрасывать
+
+    	for (char index: text) {
+		j = ch[index];	// Считываем символ, в таблице находим его индекс
+		i++;
+		cout << "step №" << i << " j ==" << j << "\n";
+		boarders[i].at(0) = boarders[i-1].at(0) + b[j-1] * (boarders[i-1].at(1) - boarders[i-1].at(0)) / delitel;
+		boarders[i].at(1) = boarders[i-1].at(0) + b[j] * (boarders[i-1].at(1) - boarders[i-1].at(0)) / delitel - 1 ;
+		// Обрабатываем варианты переполнения
+		for (;;) {
+			if (boarders[i].at(1) < Half) {
+				BitsPlusFollow(0, bits_to_follow, file_coded);
+			}
+			else if (boarders[i].at(0) >= Half) {
+				BitsPlusFollow(1, bits_to_follow, file_coded);
+				boarders[i].at(0) -= Half;
+				boarders[i].at(1) -= Half;
+			}
+			else if (boarders[i].at(0) >= First_qtr && boarders[i].at(1) < Third_qtr) {
+				bits_to_follow++;
+				boarders[i].at(0) -= First_qtr;
+				boarders[i].at(1) -= First_qtr;
+			}
+			else {
+				break;
+			}
+			boarders[i].at(0) += boarders[i].at(0);
+			boarders[i].at(1) += boarders[i].at(1) + 1;
+		}
 	}
-    return (left + right) / 2;
+	file_coded.close();
 }
 
 void decompressor() {
@@ -85,7 +124,7 @@ void decompressor() {
 }
 
 void Alphabet(string text) {
-	ofstream file_codes("Alphabet.txt"), file_coded("encoded_text.txt");	// Открываем файлы для записи
+	ofstream file_codes("Alphabet.txt");	// Открываем файл для записи
 	// map для сохранения частоты символов
 	unordered_map <char, int> freq;
 	// map для сохранения вероятностей символов
@@ -104,11 +143,10 @@ void Alphabet(string text) {
 	for (auto const &pair: set) {
         	file_codes << pair.first << ' ' << pair.second << "\n";
     	}
+	file_codes.close();	// Закрываем файл
 	// Кодируем
-	file_coded << compressor(in_len, text, set);
+	compressor(in_len, text, set);
 	cout << "\nFile was succesfully encoded.\n";
-	
-	file_codes.close(), file_coded.close();	// Закрываем файлы
 }
 
 int main() {
