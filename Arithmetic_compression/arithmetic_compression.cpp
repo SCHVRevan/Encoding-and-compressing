@@ -1,35 +1,83 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <set>
 #include <string>
+#include <array>
 using namespace std;
 
-void compressor() {
- 	
+// Тип compare (необходим для изменения параметров сортировки в set)
+struct comp {
+    template<typename T>
+    bool operator()(const T &l, const T &r) const
+    {
+        if (l.second != r.second) {
+            return l.second > r.second;
+        }
+ 
+        return l.first > r.first;
+    }
+};
+
+// Кодируем
+double compressor(int in_len, string text, set<pair<char, double>, comp> set) {
+	// Формируем map с полями под границы интервалов (в качестве ключей - символы) 
+	unordered_map <char, array<double, 2>> segment;
+	array<double, 2> interval;
+	double l = 0;
+	cout << "\n\tChecking ranges\n";
+	for (auto pair: set) {
+		interval = {l, l + pair.second};
+		cout << interval.at(0) << ' ' << interval.at(1) << "\n";
+    		segment[pair.first].at(0) = interval.at(0);
+		segment[pair.first].at(1) = interval.at(1);
+    		l = l + pair.second;
+	}
+	// Реализуем дальнейшие шаги алгоритма
+	char ch;
+   	double  newRight, newLeft, left = 0, right = 1;
+	cout << "\n\tCheck boarders:\n";
+    	for (int i = 0; i < in_len; i++) {
+		ch = text[i];
+		cout << "old left: " << left << " old right: " << right << "\n";
+        	newLeft = left + segment[ch].at(0) * (right - left);
+		cout << "new left: " << newLeft;
+		newRight = left + segment[ch].at(1) * (right - left);
+		cout << " new right: " << newRight << "\n\n";
+        	right = newRight;
+		left = newLeft;
+	}
+    return (left + right) / 2;
 }
 
 void decompressor() {
 	
 }
 
-void Arithmetic(string text) {
-	ofstream file_codes("Alphabet.txt");	// Открываем файл для записи
-  
+void Alphabet(string text) {
+	ofstream file_codes("Alphabet.txt"), file_coded("encoded_text.txt");	// Открываем файлы для записи
+	// map для сохранения частоты символов
 	unordered_map <char, int> freq;
+	// map для сохранения вероятностей символов
 	unordered_map <char, double> alphabet;
-
-	int in_len = text.length();;
-
+	// Сохраняем исходную длину текста
+	int in_len = text.length();
+	// Подсчитываем частоту символов (циклом ranged-based for)
 	for (char ch: text) {
 		freq[ch]++;
-		alphabet[ch] = (int)freq[ch] / in_len;
+		alphabet[ch] = (double)freq[ch] / in_len;
 	}
-
-	// Сохраним вид нашего алфавита в файл Alphabet (циклом ranged-based for)
-	for (auto pair: alphabet) {
-		file_codes << pair.first << " " << pair.second << '\n';	// Обращаемся к первому и второму полю alphabet соответственно
-	}
-	file_codes.close();	// Закрываем файл
+	// Перезаписываем в set для дальнейшего использования в отсортированном виде
+	set<pair<char, double>, comp> set(alphabet.begin(), alphabet.end());
+	// Выводим алфавит в соотв. файл
+	for (auto const &pair: set) {
+        	file_codes << pair.first << ' ' << pair.second << "\n";
+    	}
+	// Кодируем
+	file_coded << compressor(in_len, text, set);
+	cout << "\nFile was succesfully encoded.\n";
+	
+	file_codes.close(), file_coded.close();	// Закрываем файлы
 }
 
 int main() {
