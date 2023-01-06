@@ -22,9 +22,9 @@ struct comp {
 // Кодируем
 double compressor(int in_len, string text, set<pair<char, double>, comp> set) {
 	// Формируем map с полями под границы интервалов (в качестве ключей - символы) 
-	unordered_map <char, array<double, 2>> segment;
-	array<double, 2> interval;
-	double l = 0;
+	unordered_map <char, array<int, 2>> segment;
+	array<int, 2> interval;
+	int l = 0;
 	cout << "\n\tChecking ranges\n";
 	for (auto pair: set) {
 		interval = {l, l + pair.second};
@@ -35,7 +35,7 @@ double compressor(int in_len, string text, set<pair<char, double>, comp> set) {
 	}
 	// Реализуем дальнейшие шаги алгоритма
 	char ch;
-   	double  newRight, newLeft, left = 0, right = 1;
+   	int  newRight, newLeft, left = 0, right = 1;
 	cout << "\n\tCheck boarders:\n";
     	for (int i = 0; i < in_len; i++) {
 		ch = text[i];
@@ -51,7 +51,37 @@ double compressor(int in_len, string text, set<pair<char, double>, comp> set) {
 }
 
 void decompressor() {
-	
+	ofstream file_out("out_text.txt");
+	unordered_map <char, array<int, 2>> segment;
+	array<int, 2> interval;
+	int l = 0;
+	cout << "\n\tChecking ranges\n";
+	for (auto pair: set) {
+		interval = {l, l + pair.second};
+		cout << interval.at(0) << ' ' << interval.at(1) << "\n";
+    		segment[pair.first].at(0) = interval.at(0);
+		segment[pair.first].at(1) = interval.at(1);
+    		l = l + pair.second;
+	}
+
+    	string tmp = "";
+    	for (int i = 0; i < in_len - 1; i++) {
+		for (auto pair: segment) {
+            		if (code >= segment[pair.first].at(0) && code < segment[pair.first].at(1)) {
+                		tmp += pair.first;
+                		code = (code - segment[pair.first].at(0)) / (segment[pair.first].at(1) - segment[pair.first].at(0));
+                		break;
+			}
+		}
+	}
+	if (tmp != "") {
+		file_out << tmp;
+	}
+	else {
+		cout << "\nSomething went wrong\n";
+	}
+	file_out.close();
+}
 }
 
 void Alphabet(string text) {
@@ -62,10 +92,11 @@ void Alphabet(string text) {
 	unordered_map <char, double> alphabet;
 	// Сохраняем исходную длину текста
 	int in_len = text.length();
+	file_codes << in_len << "\n";
 	// Подсчитываем частоту символов (циклом ranged-based for)
 	for (char ch: text) {
 		freq[ch]++;
-		alphabet[ch] = (double)freq[ch] / in_len;
+		alphabet[ch] = freq[ch];
 	}
 	// Перезаписываем в set для дальнейшего использования в отсортированном виде
 	set<pair<char, double>, comp> set(alphabet.begin(), alphabet.end());
@@ -108,14 +139,56 @@ int main() {
 	text.pop_back();	// Исключаем лишний символ конца строки (\n)
 	// Выполняем кодирование (если поступил соотв. запрос)
 	if (act == "1") {
-		Arithmetic(text);
+		Alphabet(text);
 	}
 	// Выполняем декодирование
 	else if (act == "2") {
-		cout << "2 was chosen";
 		ifstream file_codes("Alphabet.txt");
+		int in_len, coded_text = stoi(text);
+				
+		unordered_map <char, int> alphabet;
+		
+		char ch = ' ';
+		string code, buffer;
+
+		getline(file_codes, buffer);
+		in_len = stoi(buffer);
+		
+		// Заполняем map данными из файла-алфавита
+		while (!file_codes.eof()) {
+			code = "";
+			getline(file_codes, buffer);
+			bool flag = true;
+			for (auto i: buffer) {
+				if (flag) {
+					ch = i;
+					flag = false;
+				}
+				else if (!flag && i != ' ') {
+					code += i;
+				}
+			}
+			// Обработка символа новой строки (\n)
+			if (code == "") {
+				ch = '\n';
+				getline(file_codes, buffer);
+				for (auto i: buffer) {
+					if (i != ' ') {
+						code += i;
+					}
+				}
+			}
+			if (code != "") {
+				alphabet[ch] = stoi(code);
+			}
+		}
+
+		set<pair<char, int>, comp> set(alphabet.begin(), alphabet.end());
 		
 		file_codes.close();	// Закрываем файл-алфавит
+		// Выполняем декодирование текста
+		decompressor(in_len, coded_text, set);
+		cout << "\nFile was succesfully decoded.\n";
 	}
   return 0;
 }
