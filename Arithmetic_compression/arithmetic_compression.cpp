@@ -33,38 +33,36 @@ void BitsPlusFollow(int bit, int bits_to_follow, ofstream& file_coded) {
 
 // Кодируем
 void compressor(string text, set<pair<char, int>, comp> set) {
-	ofstream file_coded("encoded_text.txt");
+	ofstream file_coded("encoded_text.bin");
 	unordered_map <char, int> ch;	// Первый и второй столбцы таблицы
 	unordered_map <int, int> freq_;	// Первый и третий столбцы таблицы
 	unordered_map <int, int> b;	// Первый и четвёртый столбцы таблицы
 	unordered_map <int, array<int, 2>> boarders;
 
-	ch[0] = NULL;
-	freq_[0] = NULL;
+	freq_[0] = 0;
 	b[0] = 0;
 	
 	int l = 0, j = 1;
 	for (auto pair: set) {
-    		ch[pair.first] = j;
+    	ch[pair.first] = j;
 		freq_[j] = pair.second;
 		b[j++] = l + pair.second;
-    		l += pair.second;
+    	l += pair.second;
 	}
-    	int left = 0, right = 65535, i = 0, delitel = b[j-1];
+    int left = 0, right = 65535, i = 0, delitel = b[j-1];
 	boarders[0].at(0) = left;
 	boarders[0].at(1) = right;
-	int First_qtr = (right + 1) / 4;	// 16384
-	int Half = First_qtr * 2;	// 32768
-	int Third_qtr = First_qtr * 3;	// 49152
+	int First_qtr = (right + 1) / 4;
+	int Half = First_qtr * 2;
+	int Third_qtr = First_qtr * 3;
 	int bits_to_follow = 0;	// Сколько битов сбрасывать
 
-    	for (char index: text) {
-		j = ch[index];	// Считываем символ, в таблице находим его индекс
+    for (char index: text) {
+		j = ch[index];	// Считываем символ, находим его индекс
 		i++;
-		cout << "step №" << i << " j ==" << j << "\n";
 		boarders[i].at(0) = boarders[i-1].at(0) + b[j-1] * (boarders[i-1].at(1) - boarders[i-1].at(0)) / delitel;
-		boarders[i].at(1) = boarders[i-1].at(0) + b[j] * (boarders[i-1].at(1) - boarders[i-1].at(0)) / delitel - 1 ;
-		// Обрабатываем варианты переполнения
+		boarders[i].at(1) = boarders[i-1].at(0) + b[j] * (boarders[i-1].at(1) - boarders[i-1].at(0)) / delitel - 1;
+	    	// Обрабатываем варианты переполнения
 		for (;;) {
 			if (boarders[i].at(1) < Half) {
 				BitsPlusFollow(0, bits_to_follow, file_coded);
@@ -89,38 +87,90 @@ void compressor(string text, set<pair<char, int>, comp> set) {
 	file_coded.close();
 }
 
-void decompressor() {
+void decompressor(string text, set<pair<char, int>, comp> set) {
 	ofstream file_out("out_text.txt");
-	unordered_map <char, array<int, 2>> segment;
-	array<int, 2> interval;
-	int l = 0;
-	cout << "\n\tChecking ranges\n";
+	unordered_map <int, char> ch;	// Первый и второй столбцы таблицы
+	unordered_map <int, int> freq_;	// Первый и третий столбцы таблицы
+	unordered_map <int, int> b;	// Первый и четвёртый столбцы таблицы
+	unordered_map <int, array<int, 2>> boarders;
+	
+	ch[0] = NULL;
+	freq_[0] = 0;
+	b[0] = 0;
+	
+	int l = 0, j = 1;
 	for (auto pair: set) {
-		interval = {l, l + pair.second};
-		cout << interval.at(0) << ' ' << interval.at(1) << "\n";
-    		segment[pair.first].at(0) = interval.at(0);
-		segment[pair.first].at(1) = interval.at(1);
-    		l = l + pair.second;
+    	ch[j] = pair.first;
+		freq_[j] = pair.second;
+		b[j++] = l + pair.second;
+    	l += pair.second;
 	}
+    int left = 0, right = 65535, i = 0, delitel = b[j-1];
+	boarders[0].at(0) = left;
+	boarders[0].at(1) = right;
+	int First_qtr = (right + 1) / 4;
+	int Half = First_qtr * 2;
+	int Third_qtr = First_qtr * 3;
 
-    	string tmp = "";
-    	for (int i = 0; i < in_len - 1; i++) {
-		for (auto pair: segment) {
-            		if (code >= segment[pair.first].at(0) && code < segment[pair.first].at(1)) {
-                		tmp += pair.first;
-                		code = (code - segment[pair.first].at(0)) / (segment[pair.first].at(1) - segment[pair.first].at(0));
-                		break;
-			}
+	int value, freq, text_index;
+	bitset<16> bit_value;
+	bitset<16> sum_bit;
+	
+	for (text_index = 0; text_index < 16 && text_index < text.length(); text_index++) {
+		if (text[text_index] == '1') {
+			bit_value.set(15-text_index);
 		}
 	}
-	if (tmp != "") {
-		file_out << tmp;
-	}
-	else {
-		cout << "\nSomething went wrong\n";
+	cout << "bit_value: " << bit_value << "\n";
+	value = (int)(bit_value.to_ulong());
+	cout << "value: " << value << "\n\n";
+	
+    for (int i = 1; i < text.length() - text_index; i++) {
+		freq = ((value - boarders[i-1].at(0) + 1) * delitel - 1) / (boarders[i-1].at(1) - boarders[i-1].at(0) + 1);
+		for (j = 1; b[j] <= freq; j++);	// Поиск символа
+		cout << "check j: " << j << "\n\n";
+		boarders[i].at(0) = boarders[i-1].at(0) + b[j-1] * (boarders[i-1].at(1) - boarders[i-1].at(0)) / delitel;
+		boarders[i].at(1) = boarders[i-1].at(0) + b[j] * (boarders[i-1].at(1) - boarders[i-1].at(0)) / delitel - 1;
+		// Обрабатываем варианты переполнения
+		for (;;) {
+			if (boarders[i].at(1) < Half) {;}	// Ничего
+			else if (boarders[i].at(0) >= Half) {
+				boarders[i].at(0) -= Half;
+				boarders[i].at(1) -= Half;
+				value -= Half;
+			}
+			else if ((boarders[i].at(0) >= First_qtr) && (boarders[i].at(1) < Third_qtr)) {
+				boarders[i].at(0) -= First_qtr;
+				boarders[i].at(1) -= First_qtr;
+				value -= First_qtr;
+			}
+			else {
+				break;
+			}
+			boarders[i].at(0) += boarders[i].at(0);
+			boarders[i].at(1) += boarders[i].at(1) + 1;
+			sum_bit.reset();
+			if (text[text_index++] == '1') {
+				sum_bit.set(0);
+			}
+			cout << "value check 1 = " << value << "\n";
+			bit_value = bitset<16>(value);
+			cout << "bit_value check 1 = " << bit_value << "\n";
+			cout << "sum_bit = " << sum_bit << "\n";
+			if ((sum_bit.test(0) == false && bit_value.test(0) == false) || (sum_bit.test(0) == true && bit_value.test(0) == true)) {
+				bit_value <<= 1;
+			}
+			else {
+				bit_value <<= 1;
+				bit_value.set(0);
+			}
+			cout << "bit_value check 2 = " << bit_value << "\n";
+			value = (int)(bit_value.to_ulong());
+			cout << "value check 2 = " << value << "\n\n";
+		}
+		file_out << ch[j];
 	}
 	file_out.close();
-}
 }
 
 void Alphabet(string text) {
@@ -129,9 +179,6 @@ void Alphabet(string text) {
 	unordered_map <char, int> freq;
 	// map для сохранения вероятностей символов
 	unordered_map <char, double> alphabet;
-	// Сохраняем исходную длину текста
-	int in_len = text.length();
-	file_codes << in_len << "\n";
 	// Подсчитываем частоту символов (циклом ranged-based for)
 	for (char ch: text) {
 		freq[ch]++;
@@ -145,7 +192,7 @@ void Alphabet(string text) {
     	}
 	file_codes.close();	// Закрываем файл
 	// Кодируем
-	compressor(in_len, text, set);
+	compressor(text, set);
 	cout << "\nFile was succesfully encoded.\n";
 }
 
@@ -182,15 +229,11 @@ int main() {
 	// Выполняем декодирование
 	else if (act == "2") {
 		ifstream file_codes("Alphabet.txt");
-		int in_len, coded_text = stoi(text);
 				
 		unordered_map <char, int> alphabet;
 		
 		char ch = ' ';
 		string code, buffer;
-
-		getline(file_codes, buffer);
-		in_len = stoi(buffer);
 		
 		// Заполняем map данными из файла-алфавита
 		while (!file_codes.eof()) {
@@ -225,7 +268,7 @@ int main() {
 		
 		file_codes.close();	// Закрываем файл-алфавит
 		// Выполняем декодирование текста
-		decompressor(in_len, coded_text, set);
+		decompressor(text, set);
 		cout << "\nFile was succesfully decoded.\n";
 	}
   return 0;
