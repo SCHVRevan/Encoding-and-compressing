@@ -108,6 +108,11 @@ void HuffmanTree(string text) {
 	encode(root, "", alphabet);
 	cout << "\nFile was succesfully encoded.\n";
 	
+	// Сохраним вид нашего алфавита в файл Alphabet (циклом ranged-based for)
+	for (auto pair: alphabet) {
+		file_codes << pair.first << " " << pair.second << '\n';	// Обращаемся к первому и второму полю alphabet соответственно
+	}
+	
 	// Выводим закодированный текст
 	string str = "";
 	int flag = 0;
@@ -144,11 +149,7 @@ void HuffmanTree(string text) {
 	}
 	bitset<16> code_flag(flag); 
 	file_coded << char(code_flag.to_ulong()) << str << char(code_bit.to_ulong());
-
-	// Сохраним вид нашего алфавита в файл Alphabet (циклом ranged-based for)
-	for (auto pair: alphabet) {
-		file_codes << pair.first << " " << pair.second << '\n';	// Обращаемся к первому и второму полю alphabet соответственно
-	}	
+	
 	file_codes.close(), file_coded.close();	// Закрываем файлы
 }
 
