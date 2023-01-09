@@ -3,6 +3,7 @@
 #include <queue>
 #include <unordered_map>
 #include <string>
+#include <bitset>
 using namespace std;
 
 // Узел дерева
@@ -105,14 +106,44 @@ void HuffmanTree(string text) {
 	
 	// Выполняем кодирование текста
 	encode(root, "", alphabet);
+	cout << "\nFile was succesfully encoded.\n";
 	
 	// Выводим закодированный текст
 	string str = "";
+	int flag = 0;
+	bitset<16> code_bit;
+
 	for (char ch: text) {
-		str += alphabet[ch];
+		for (char code: alphabet[ch]) {
+			flag++;
+			if (flag % 17 == 0) {
+				str += char(code_bit.to_ulong());
+				code_bit.reset();
+				flag = 1;
+				if (code == '1') {
+					code_bit.set(0);
+				}
+				if (flag % 16 != 0) {
+					code_bit <<= 1;
+				}
+			}
+			else {
+				if (code == '1') {
+					code_bit.set(0);
+				}
+				if (flag % 16 != 0) {
+					code_bit <<= 1;
+				}
+			}
+		}
 	}
-	file_coded << str;
-	cout << "\nFile was succesfully encoded.\n";
+	if (flag != 0) {
+		for (int i = 0; i < (15 - flag); i++) {
+			code_bit <<= 1;
+		}
+	}
+	bitset<16> code_flag(flag); 
+	file_coded << char(code_flag.to_ulong()) << str << char(code_bit.to_ulong());
 
 	// Сохраним вид нашего алфавита в файл Alphabet (циклом ranged-based for)
 	for (auto pair: alphabet) {
