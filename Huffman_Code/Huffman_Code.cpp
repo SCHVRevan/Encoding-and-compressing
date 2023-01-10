@@ -49,14 +49,43 @@ void encode(Node* root, string str, unordered_map <char, string> &alphabet) {
 // Декодируем
 void decode(string text, unordered_map <string, char> &alphabet) {
 	ofstream file_out("out_text.txt");	// Открываем файл для записи
-	string tmp = "";
-	// Посимвольно считываем данные из закодированного текста
-	for (char ch: text) {
-		tmp += ch;
-		// Проверяем, существует ли в алфавите элемент с таким ключом
-		if (alphabet.find(tmp) != alphabet.end()) {
-			file_out << alphabet[tmp];
-			tmp = "";
+	int flag;
+	string key = "";
+	bitset<8> tmp(text[0]);
+	flag = int(tmp.to_ulong());
+	cout << "flag: " << flag << "\n";
+	for (int l = 1; l < text.length(); l++) {
+		bitset<8> tmp(text[l]);
+		cout << tmp << "\n";
+		if (l != text.length() - 1) {
+			for (int i = 7; i >= 0; i--) {
+				if (tmp.test(i)) {
+					key += '1';
+				}
+				else {
+					key += '0';
+				}
+				// Проверяем, существует ли в алфавите элемент с таким ключом
+				if (alphabet.find(key) != alphabet.end()) {
+					file_out << alphabet[key];
+					key = "";
+				}
+			}
+		}
+		else {
+			for (int i = 7; i >= flag; i--) {
+				if (tmp.test(i)) {
+					key += '1';
+				}
+				else {
+					key += '0';
+				}
+				// Проверяем, существует ли в алфавите элемент с таким ключом
+				if (alphabet.find(key) != alphabet.end()) {
+					file_out << alphabet[key];
+					key = "";
+				}
+			}
 		}
 	}
 	// Данная реализация декодирования возможна благодаря тому, что любой код не является префиксом для кода другого символа
@@ -116,38 +145,36 @@ void HuffmanTree(string text) {
 	// Выводим закодированный текст
 	string str = "";
 	int flag = 0;
-	bitset<16> code_bit;
+	bitset<8> code_bit;
 
 	for (char ch: text) {
 		for (char code: alphabet[ch]) {
 			flag++;
-			if (flag % 17 == 0) {
+			code_bit <<= 1;
+			if (flag % 8 == 0) {
+				if (code == '1') {
+					code_bit.set(0);
+				}
+				cout << code_bit << "\n";
 				str += char(code_bit.to_ulong());
 				code_bit.reset();
-				flag = 1;
-				if (code == '1') {
-					code_bit.set(0);
-				}
-				if (flag % 16 != 0) {
-					code_bit <<= 1;
-				}
+				flag = 0;
 			}
-			else {
-				if (code == '1') {
+			else if (code == '1') {
 					code_bit.set(0);
-				}
-				if (flag % 16 != 0) {
-					code_bit <<= 1;
-				}
 			}
 		}
 	}
-	if (flag != 0) {
-		for (int i = 0; i < (15 - flag); i++) {
+	flag = 8 - flag;
+	if (flag % 8 != 0) {
+		for (int i = 0; i < flag; i++) {
 			code_bit <<= 1;
 		}
 	}
-	bitset<16> code_flag(flag); 
+	else {
+		flag = 0;
+	}
+	bitset<8> code_flag(flag);
 	file_coded << char(code_flag.to_ulong()) << str << char(code_bit.to_ulong());
 	
 	file_codes.close(), file_coded.close();	// Закрываем файлы
