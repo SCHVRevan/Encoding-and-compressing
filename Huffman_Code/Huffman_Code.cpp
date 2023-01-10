@@ -48,14 +48,14 @@ void encode(Node* root, string str, unordered_map <char, string> &alphabet) {
 }
 // Декодируем
 void decode(string path) {
-	ofstream file_out("out_text.txt");	// Открываем файл для записи
+	ofstream file_out("out_text.txt"), test("test.txt");	// Открываем файл для записи
 	ifstream file_coded(path);
 	
 	// map для сохранения символов (коды символов передаём в качетсве ключа)
 	unordered_map <string, char> alphabet;
 	
 	char ch = ' ';
-	string code, text;
+	string code, text, buffer;
 	getline(file_coded, text);
 	bitset<8> tmp(text[0]);
 	int power = (int)(tmp.to_ulong());
@@ -90,51 +90,52 @@ void decode(string path) {
 	}
 
 	int flag;
-	bool get_key = true;
+	text = "";
 	string key = "";
 	while (!file_coded.eof()) {
-		getline(file_coded, text);
-		if (get_key) {
-			bitset<8> bit_key (text[0]);
-			flag = int(bit_key.to_ulong());
-			get_key = false;
-		}
-		for (int l = 1; l < text.length(); l++) {
-			bitset<8> tmp(text[l]);
-			if (l != text.length() - 1) {
-				for (int i = 7; i >= 0; i--) {
-					if (tmp.test(i)) {
-						key += '1';
-					}
-					else {
-						key += '0';
-					}
-					// Проверяем, существует ли в алфавите элемент с таким ключом
-					if (alphabet.find(key) != alphabet.end()) {
-						file_out << alphabet[key];
-						key = "";
-					}
+		getline(file_coded, buffer);
+		text += buffer;
+		text += "\n";
+	}
+	text.pop_back();
+	bitset<8> bit_key (text[0]);
+	flag = int(bit_key.to_ulong());
+	for (int l = 1; l < text.length(); l++) {
+		bitset<8> tmp(text[l]);
+		if (l != text.length() - 1) {
+			for (int i = 7; i >= 0; i--) {
+				if (tmp.test(i)) {
+					key += '1';
+				}
+				else {
+					key += '0';
+				}
+				// Проверяем, существует ли в алфавите элемент с таким ключом
+				if (alphabet.find(key) != alphabet.end()) {
+					file_out << alphabet[key];
+					test << " key: " << key << " - " << alphabet[key] << "\n";
+					key = "";
 				}
 			}
-			else if (text[l] != '\n') {
-				for (int i = 7; i >= flag; i--) {
-					if (tmp.test(i)) {
-						key += '1';
-					}
-					else {
-						key += '0';
-					}
-					// Проверяем, существует ли в алфавите элемент с таким ключом
-					if (alphabet.find(key) != alphabet.end()) {
-						file_out << alphabet[key];
-						key = "";
-					}
+		}
+		else if (text[l] != '\n') {
+			for (int i = 7; i >= flag; i--) {
+				if (tmp.test(i)) {
+					key += '1';
+				}
+				else {
+					key += '0';
+				}
+				// Проверяем, существует ли в алфавите элемент с таким ключом
+				if (alphabet.find(key) != alphabet.end()) {
+					file_out << alphabet[key];
+					key = "";
 				}
 			}
 		}
 	}
 	// Данная реализация декодирования возможна благодаря тому, что любой код не является префиксом для кода другого символа
-	file_coded.close(), file_out.close();
+	file_coded.close(), file_out.close(), test.close();
 }
 
 // Дерево Хаффмана
