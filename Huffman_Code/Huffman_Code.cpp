@@ -47,54 +47,99 @@ void encode(Node* root, string str, unordered_map <char, string> &alphabet) {
 	encode(root->right, str + "1", alphabet);
 }
 // Декодируем
-void decode(string text, unordered_map <string, char> &alphabet) {
+void decode(string path) {
 	ofstream file_out("out_text.txt");	// Открываем файл для записи
-	int flag;
-	string key = "";
+	ifstream file_coded(path);
+	
+	// map для сохранения символов (коды символов передаём в качетсве ключа)
+	unordered_map <string, char> alphabet;
+	
+	char ch = ' ';
+	string code, text;
+	getline(file_coded, text);
 	bitset<8> tmp(text[0]);
-	flag = int(tmp.to_ulong());
-	cout << "flag: " << flag << "\n";
-	for (int l = 1; l < text.length(); l++) {
-		bitset<8> tmp(text[l]);
-		cout << tmp << "\n";
-		if (l != text.length() - 1) {
-			for (int i = 7; i >= 0; i--) {
-				if (tmp.test(i)) {
-					key += '1';
-				}
-				else {
-					key += '0';
-				}
-				// Проверяем, существует ли в алфавите элемент с таким ключом
-				if (alphabet.find(key) != alphabet.end()) {
-					file_out << alphabet[key];
-					key = "";
+	int power = (int)(tmp.to_ulong());
+	
+	// Заполняем map данными из файла-алфавита
+	for (int ind = 0; ind < power; ind++) {
+		code = "";
+		getline(file_coded, text);
+		bool flag = true;
+		for (auto i: text) {
+			if (flag) {
+				ch = i;
+				flag = false;
+			}
+			else if (!flag && i != ' ') {
+				code += i;
+			}
+		}
+		// Обработка символа новой строки (\n)
+		if (code == "") {
+			ch = '\n';
+			getline(file_coded, text);
+			for (auto i: text) {
+				if (i != ' ') {
+					code += i;
 				}
 			}
 		}
-		else {
-			for (int i = 7; i >= flag; i--) {
-				if (tmp.test(i)) {
-					key += '1';
+		if (code != "") {
+			alphabet[code] = ch;
+		}
+	}
+
+	int flag;
+	bool get_key = true;
+	string key = "";
+	while (!file_coded.eof()) {
+		getline(file_coded, text);
+		if (get_key) {
+			bitset<8> bit_key (text[0]);
+			flag = int(bit_key.to_ulong());
+			get_key = false;
+		}
+		for (int l = 1; l < text.length(); l++) {
+			bitset<8> tmp(text[l]);
+			if (l != text.length() - 1) {
+				for (int i = 7; i >= 0; i--) {
+					if (tmp.test(i)) {
+						key += '1';
+					}
+					else {
+						key += '0';
+					}
+					// Проверяем, существует ли в алфавите элемент с таким ключом
+					if (alphabet.find(key) != alphabet.end()) {
+						file_out << alphabet[key];
+						key = "";
+					}
 				}
-				else {
-					key += '0';
-				}
-				// Проверяем, существует ли в алфавите элемент с таким ключом
-				if (alphabet.find(key) != alphabet.end()) {
-					file_out << alphabet[key];
-					key = "";
+			}
+			else if (text[l] != '\n') {
+				for (int i = 7; i >= flag; i--) {
+					if (tmp.test(i)) {
+						key += '1';
+					}
+					else {
+						key += '0';
+					}
+					// Проверяем, существует ли в алфавите элемент с таким ключом
+					if (alphabet.find(key) != alphabet.end()) {
+						file_out << alphabet[key];
+						key = "";
+					}
 				}
 			}
 		}
 	}
 	// Данная реализация декодирования возможна благодаря тому, что любой код не является префиксом для кода другого символа
-	file_out.close();
+	file_coded.close(), file_out.close();
 }
 
 // Дерево Хаффмана
 void HuffmanTree(string text) {
-	ofstream file_codes("Alphabet.txt"), file_coded("encoded_text.txt");	// Открываем файлы для записи
+	ofstream file_coded("encoded_text.txt");	// Открываем файлы для записи
 	// map для сохранения частоты символов
 	unordered_map <char, int> freq;
 
@@ -137,15 +182,23 @@ void HuffmanTree(string text) {
 	encode(root, "", alphabet);
 	cout << "\nFile was succesfully encoded.\n";
 	
-	// Сохраним вид нашего алфавита в файл Alphabet (циклом ranged-based for)
+	int power;
+	string alphab;
+	// Сохраним вид нашего алфавита в файл
 	for (auto pair: alphabet) {
-		file_codes << pair.first << " " << pair.second << '\n';	// Обращаемся к первому и второму полю alphabet соответственно
+		power++;
+		// Обращаемся к первому и второму полю alphabet соответственно
+		alphab += pair.first;
+		alphab += ' ';
+		alphab += pair.second;
+		alphab += "\n";
 	}
 	
 	// Выводим закодированный текст
-	string str = "";
 	int flag = 0;
+	string str = "";
 	bitset<8> code_bit;
+	bitset<8> bit_power(power);
 
 	for (char ch: text) {
 		for (char code: alphabet[ch]) {
@@ -155,7 +208,6 @@ void HuffmanTree(string text) {
 				if (code == '1') {
 					code_bit.set(0);
 				}
-				cout << code_bit << "\n";
 				str += char(code_bit.to_ulong());
 				code_bit.reset();
 				flag = 0;
@@ -175,9 +227,9 @@ void HuffmanTree(string text) {
 		flag = 0;
 	}
 	bitset<8> code_flag(flag);
-	file_coded << char(code_flag.to_ulong()) << str << char(code_bit.to_ulong());
+	file_coded << char(bit_power.to_ulong()) << "\n" << alphab << char(code_flag.to_ulong()) << str << char(code_bit.to_ulong());
 	
-	file_codes.close(), file_coded.close();	// Закрываем файлы
+	file_coded.close();	// Закрываем файлы
 }
 
 int main() {
@@ -199,56 +251,21 @@ int main() {
 		cout << "\nAn incorrect value was entered. Please, try again.\n";
 		return 0;
 	}
-	// Пока не достигли конца файла, построчно считываем данные
-	while (!file_in.eof()) {
-		getline(file_in, tmp);	// Т.к. функция getline() считывает до символа конца строки,
-		text += tmp + '\n';	// Не включая их, дополняем текст этим элементом
-	};
-	file_in.close();	// Закрываем файл
-	text.pop_back();	// Исключаем лишний символ конца строки (\n)
 	// Выполняем кодирование (если поступил соотв. запрос)
 	if (act == "1") {
+		// Пока не достигли конца файла, построчно считываем данные
+		while (!file_in.eof()) {
+			getline(file_in, tmp);	// Т.к. функция getline() считывает до символа конца строки,
+			text += tmp + '\n';	// Не включая их, дополняем текст этим элементом
+		};
+		file_in.close();	// Закрываем файл
+		text.pop_back();	// Исключаем лишний символ конца строки (\n)
 		HuffmanTree(text);
 	}
 	// Выполняем декодирование
 	else if (act == "2") {
-		ifstream file_codes("Alphabet.txt");
-		// map для сохранения символов (коды символов передаём в качетсве ключа)
-		unordered_map <string, char> alphabet;
-
-		char ch = ' ';
-		string code, buffer;
-		// Заполняем map данными из файла-алфавита
-		while (!file_codes.eof()) {
-			code = "";
-			getline(file_codes, buffer);
-			bool flag = true;
-			for (auto i: buffer) {
-				if (flag) {
-					ch = i;
-					flag = false;
-				}
-				else if (!flag && i != ' ') {
-					code += i;
-				}
-			}
-			// Обработка символа новой строки (\n)
-			if (code == "") {
-				ch = '\n';
-				getline(file_codes, buffer);
-				for (auto i: buffer) {
-					if (i != ' ') {
-						code += i;
-					}
-				}
-			}
-			if (code != "") {
-				alphabet[code] = ch;
-			}
-		}
-		file_codes.close();	// Закрываем файл-алфавит
 		// Выполняем декодирование текста
-		decode(text, alphabet);
+		decode(path);
 		cout << "\nFile was succesfully decoded.\n";
 	}
   return 0;
