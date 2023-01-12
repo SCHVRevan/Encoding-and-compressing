@@ -48,7 +48,7 @@ void encode(Node* root, string str, unordered_map <char, string> &alphabet) {
 }
 // Декодируем
 void decode(string path) {
-	ofstream file_out("out_text.txt"), test("test.txt");	// Открываем файл для записи
+	ofstream file_out("out_text.txt");	// Открываем файл для записи
 	ifstream file_coded(path);
 	
 	// map для сохранения символов (коды символов передаём в качетсве ключа)
@@ -113,7 +113,6 @@ void decode(string path) {
 				// Проверяем, существует ли в алфавите элемент с таким ключом
 				if (alphabet.find(key) != alphabet.end()) {
 					file_out << alphabet[key];
-					test << " key: " << key << " - " << alphabet[key] << "\n";
 					key = "";
 				}
 			}
@@ -135,7 +134,7 @@ void decode(string path) {
 		}
 	}
 	// Данная реализация декодирования возможна благодаря тому, что любой код не является префиксом для кода другого символа
-	file_coded.close(), file_out.close(), test.close();
+	file_coded.close(), file_out.close();
 }
 
 // Дерево Хаффмана
