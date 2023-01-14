@@ -56,14 +56,14 @@ void compressor(string text, set<pair<char, int>, comp> set, ofstream& file_code
 		b[j++] = l + pair.second;
     	l += pair.second;
 	}
-    int i = 0, delitel = b[j-1];
+    	int i = 0, delitel = b[j-1];
 	boarders[0].at(0) = 0;
 	boarders[0].at(1) = 65535;
 	int First_qtr = (boarders[0].at(1) + 1) / 4;
 	int Half = First_qtr * 2;
 	int Third_qtr = First_qtr * 3;
 	int bits_to_follow = 0;
-    for (char index: text) {
+    	for (char index: text) {
 		j = ch[index];
 		i++;
 		boarders[i].at(0) = boarders[i-1].at(0) + b[j-1] * (boarders[i-1].at(1) - boarders[i-1].at(0) + 1) / delitel;
@@ -119,7 +119,7 @@ void compressor(string text, set<pair<char, int>, comp> set, ofstream& file_code
 
 // Декодируем
 void decompressor(string path) {
-	ofstream file_out("out_text.txt"), test("test.txt");
+	ofstream file_out("out_text.txt");
 	ifstream file_coded(path);
 	
 	unordered_map <int, char> ch;	// Первый и второй столбцы таблицы
@@ -185,15 +185,13 @@ void decompressor(string path) {
 	int l = 0, j = 1;
 	// Заполнение таблицы
 	for (auto pair: set) {
-    	ch[j] = pair.first;
+    		ch[j] = pair.first;
 		freq_[j] = pair.second;
 		b[j++] = l + pair.second;
-    	l += pair.second;
-		test << j-1 << ' ' << ch[j-1] << ' ' << freq_[j-1] << ' ' << b[j-1] << "\n";
+    		l += pair.second;
 	}
-	test << "\n";
 	
-    int i = 0, delitel = b[j-1];
+    	int i = 0, delitel = b[j-1];
 	boarders[0].at(0) = 0;
 	boarders[0].at(1) = 65535;
 	int First_qtr = (boarders[0].at(1) + 1) / 4;
@@ -240,18 +238,12 @@ void decompressor(string path) {
 			bit_value.set(15-text_index);
 		}
 	}
-	test << "Bit_value = " << bit_value << "\n";
 	value = (int)(bit_value.to_ulong());
-	test << "Start value = " << value << "\n";
-    for (int i = 1; i < text_power; i++) {
+    	for (int i = 1; i < text_power; i++) {
 		freq = ((value - boarders[i-1].at(0) + 1) * delitel - 1) / (boarders[i-1].at(1) - boarders[i-1].at(0) + 1);
-		test << "\nfreq: " << freq << "\n";
 		for (j = 1; b[j] <= freq; j++);	// Поиск символа
-		test << "check j: " << j << "\nch: " << ch[j] << "\n\n";
 		boarders[i].at(0) = boarders[i-1].at(0) + b[j-1] * (boarders[i-1].at(1) - boarders[i-1].at(0) + 1) / delitel;
-		test << "Start L[i] = " << boarders[i].at(0) << "\n";
 		boarders[i].at(1) = boarders[i-1].at(0) + b[j] * (boarders[i-1].at(1) - boarders[i-1].at(0) + 1) / delitel - 1;
-		test << "Start R[i] = " << boarders[i].at(1) << "\n";
 		// Обрабатываем варианты переполнения
 		for (;;) {
 			if (boarders[i].at(1) < Half) {;}	// Ничего
@@ -269,12 +261,8 @@ void decompressor(string path) {
 				break;
 			}
 			boarders[i].at(0) += boarders[i].at(0);
-			test << "Normalized L[i] = " << boarders[i].at(0) << "\n";
 			boarders[i].at(1) += boarders[i].at(1) + 1;
-			test << "Normalized R[i] = " << boarders[i].at(1) << "\n";
-			test << "Old value: " << value << "\n";
 			bit_value = bitset<16>(value);
-			test << "In binary old: " << bit_value << " + " << text[text_index] << "\n";
 			if (text[text_index] == '1') {
 				bit_value <<= 1;
 				bit_value.set(0);
@@ -283,14 +271,12 @@ void decompressor(string path) {
 				bit_value <<= 1;
 			}
 			text_index++;
-			test << "In binary new: " << bit_value << "\n";
 			value = (int)(bit_value.to_ulong());
-			test << "New value = " << value << "\n\n";
 		}
 		file_out << ch[j];
 	}
 	file_out << last_ch;
-	file_out.close(), test.close();
+	file_out.close();
 }
 
 void Alphabet(string text) {
@@ -316,11 +302,11 @@ void Alphabet(string text) {
 	set<pair<char, int>, comp> set(alphabet.begin(), alphabet.end());
 	for (auto const &pair: set) {
 		power++;
-        str += pair.first;
+        	str += pair.first;
 		str += ' ';
 		str += to_string(pair.second);
 		str += "\n";
-    }
+    	}
 	bitset<8> bit_power(power);
 	file_coded << (char)(bit_power.to_ulong()) << "\n" << str;
 
